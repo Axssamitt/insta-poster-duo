@@ -9,6 +9,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 
 interface PostFormProps {
   onSubmit: (formData: FormData) => void;
+  onSaveFormData?: (formData: FormData) => void;
+  isSubmitting?: boolean;
 }
 
 interface FormData {
@@ -21,7 +23,7 @@ interface FormData {
   igUserId: string;
 }
 
-const PostForm = ({ onSubmit }: PostFormProps) => {
+const PostForm = ({ onSubmit, onSaveFormData, isSubmitting = false }: PostFormProps) => {
   const [formData, setFormData] = useState<FormData>({
     mode: 'browser',
     postType: 'story',
@@ -67,6 +69,16 @@ const PostForm = ({ onSubmit }: PostFormProps) => {
     e.preventDefault();
     onSubmit(formData);
   };
+
+  const handleSaveData = () => {
+    if (onSaveFormData) {
+      onSaveFormData(formData);
+    }
+  };
+
+  // Verifica se o formulário tem dados válidos para salvar
+  const isFormValid = formData.mode === 'browser' ? !!formData.mediaFile : 
+                     (!!formData.mediaUrl && !!formData.accessToken && !!formData.igUserId);
 
   return (
     <form onSubmit={handleSubmit}>
@@ -188,13 +200,29 @@ const PostForm = ({ onSubmit }: PostFormProps) => {
             </>
           )}
         </CardContent>
-        <CardFooter>
-          <Button
-            type="submit"
-            className="w-full bg-instagram-gradient hover:opacity-90 transition-opacity"
-          >
-            Publicar {formData.postType === 'story' ? 'Story' : 'Reel'}
-          </Button>
+        <CardFooter className="flex-col space-y-2">
+          <div className="flex gap-2 w-full">
+            <Button
+              type="submit"
+              className="flex-1 bg-instagram-gradient hover:opacity-90 transition-opacity"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Publicando..." : `Publicar ${formData.postType === 'story' ? 'Story' : 'Reel'}`}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleSaveData}
+              disabled={!isFormValid || isSubmitting}
+            >
+              Salvar Dados
+            </Button>
+          </div>
+          {onSaveFormData && (
+            <p className="text-xs text-center text-muted-foreground">
+              Salve os dados antes de agendar postagens automáticas
+            </p>
+          )}
         </CardFooter>
       </Card>
     </form>
